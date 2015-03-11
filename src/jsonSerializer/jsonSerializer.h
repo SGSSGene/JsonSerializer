@@ -1,0 +1,362 @@
+#ifndef Converter_Converter_H
+#define Converter_Converter_H
+
+#include <array>
+#include <fstream>
+#include <list>
+#include <map>
+#include <string>
+#include <vector>
+
+#include <json/json.h>
+//#include <genericFactory/genericFactory.h>
+
+
+namespace jsonSerializer {
+	template<typename ...T>
+	class Converter;
+
+	class NodeValue;
+
+	template<typename T>
+	class NodeValueDefault;
+
+	class Node {
+	protected:
+		Json::Value& value;
+		bool serialize;
+		uint32_t version;
+	public:
+		Node(Json::Value& _value, bool _serialize, uint32_t _fileFormatVersion)
+			: value(_value)
+			, serialize(_serialize)
+			, version (_fileFormatVersion) {
+		}
+		uint32_t getFileFormatVersion() const { return version; }
+		bool isSerializing() const {
+			return serialize;
+		}
+		Json::Value& getValue() { return value; }
+
+		NodeValue operator[](std::string const& _s);
+	};
+
+	class NodeValue : public Node {
+	private:
+		bool defaultValueNeeded;
+	public:
+		NodeValue(Json::Value& _value, bool _serialize, uint32_t _fileFormatVersion, bool _defaultValueNeeded)
+			: Node(_value, _serialize, _fileFormatVersion)
+			, defaultValueNeeded(_defaultValueNeeded) {}
+		template<typename T>
+		NodeValueDefault<T> operator%(T& x);
+	};
+
+
+	template<typename T>
+	class NodeValueDefault {
+	private:
+		T& t;
+		bool needDefaultValue;
+	public:
+		NodeValueDefault(T& _t, bool _needDefaultValue)
+			: t(_t)
+			, needDefaultValue(_needDefaultValue) {}
+
+		void operator or(T const& _t) {
+			if (needDefaultValue) {
+				t = _t;
+				needDefaultValue = false;
+			}
+		}
+
+	};
+
+	inline NodeValue Node::operator[](std::string const& _s) {
+		bool defaultValueNeeded = not value.isMember(_s);
+		return NodeValue(value[_s], serialize, version, defaultValueNeeded);
+	}
+
+	template<typename T>
+	inline NodeValueDefault<T> NodeValue::operator%(T& x) {
+		if (serialize) {
+			Converter<T>::serialize(*this, x);
+		} else if (not defaultValueNeeded) {
+			Converter<T>::deserialize(*this, x);
+		} else {
+			return NodeValueDefault<T>(x, defaultValueNeeded);
+		}
+		return NodeValueDefault<T>(x, false);
+	}
+
+
+
+
+	template<>
+	class Converter<bool> {
+	public:
+		static void   serialize(Node& node, bool& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, bool& x) {
+			x = node.getValue().asBool();
+		}
+	};
+
+	template<>
+	class Converter<uint8_t> {
+	public:
+		static void   serialize(Node& node, uint8_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, uint8_t& x) {
+			x = node.getValue().asUInt();
+		}
+	};
+	template<>
+	class Converter<int8_t> {
+	public:
+		static void   serialize(Node& node, int8_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, int8_t& x) {
+			x = node.getValue().asInt();
+		}
+	};
+	template<>
+	class Converter<uint16_t> {
+	public:
+		static void   serialize(Node& node, uint16_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, uint16_t& x) {
+			x = node.getValue().asUInt();
+		}
+	};
+	template<>
+	class Converter<int16_t> {
+	public:
+		static void   serialize(Node& node, int16_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, int16_t& x) {
+			x = node.getValue().asInt();
+		}
+	};
+	template<>
+	class Converter<uint32_t> {
+	public:
+		static void   serialize(Node& node, uint32_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, uint32_t& x) {
+			x = node.getValue().asUInt();
+		}
+	};
+
+	template<>
+	class Converter<int32_t> {
+	public:
+		static void   serialize(Node& node, int32_t& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, int32_t& x) {
+			x = node.getValue().asInt();
+		}
+	};
+	template<>
+	class Converter<float> {
+	public:
+		static void   serialize(Node& node, double& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, double& x) {
+			x = node.getValue().asDouble();
+		}
+	};
+
+	template<>
+	class Converter<double> {
+	public:
+		static void   serialize(Node& node, double& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, double& x) {
+			x = node.getValue().asDouble();
+		}
+	};
+
+/*	template<>
+	class Converter<Second> {
+	public:
+		static void   serialize(Node& node, Second& x) {
+			node.getValue() = x.value();
+		}
+		static void deserialize(Node& node, Second& x) {
+			x = node.getValue().asDouble() * seconds;
+		}
+	};*/
+
+	template<>
+	class Converter<std::string> {
+	public:
+		static void   serialize(Node& node, std::string& x) {
+			node.getValue() = x;
+		}
+		static void deserialize(Node& node, std::string& x) {
+			x = node.getValue().asString();
+		}
+	};
+
+	template<typename T>
+	class Converter<std::vector<T>> {
+	public:
+		static void   serialize(Node& node, std::vector<T>& x) {
+			node.getValue() = Json::arrayValue;
+			for (auto& e : x) {
+				Json::Value value;
+				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % e;
+				node.getValue().append(value);
+			}
+		}
+		static void deserialize(Node& node, std::vector<T>& x) {
+			for (uint i(0); i<node.getValue().size(); ++i) {
+				x.push_back(T());
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % x.back();
+			}
+		}
+	};
+	template<typename T>
+	class Converter<std::list<T>> {
+	public:
+		static void   serialize(Node& node, std::list<T>& x) {
+			node.getValue() = Json::arrayValue;
+			for (auto e : x) {
+				Json::Value value;
+				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % e;
+				node.getValue().append(value);
+			}
+		}
+		static void deserialize(Node& node, std::list<T>& x) {
+			for (uint i(0); i<node.getValue().size(); ++i) {
+				x.push_back(T());
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % x.back();
+			}
+		}
+	};
+	template<typename T, std::size_t N>
+	class Converter<std::array<T, N>> {
+	public:
+		static void   serialize(Node& node, std::array<T, N>& x) {
+			node.getValue() = Json::arrayValue;
+			for (auto& e : x) {
+				Json::Value value;
+				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % e;
+				node.getValue().append(value);
+			}
+		}
+		static void deserialize(Node& node, std::array<T, N>& x) {
+			for (uint i(0); i<node.getValue().size(); ++i) {
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				newNode % x[i];
+			}
+		}
+	};
+
+
+	template<typename T1, typename T2>
+	class Converter<std::map<T1, T2>> {
+	public:
+		static void   serialize(Node& node, std::map<T1, T2>& x) {
+			node.getValue() = Json::arrayValue;
+			for (auto& e : x) {
+				T1  key   = e.first;
+				T2& value = e.second;
+				Json::Value jsonValue;
+				NodeValue(jsonValue["key"], true, node.getFileFormatVersion(), false)   % key;
+				NodeValue(jsonValue["value"], true, node.getFileFormatVersion(), false) % value;
+				node.getValue().append(jsonValue);
+			}
+		}
+		static void deserialize(Node& node, std::map<T1, T2>& x) {
+			for (uint i(0); i<node.getValue().size(); ++i) {
+				T1 key;
+				T2 value;
+				NodeValue(node.getValue()[i]["key"], false, node.getFileFormatVersion(), false)   % key;
+				NodeValue(node.getValue()[i]["value"], false, node.getFileFormatVersion(), false) % value;
+				x[key] = std::move(value);
+			}
+		}
+	};
+
+	template<typename ...T>
+	class ConverterSplit;
+
+	template<typename T>
+	class Converter<T> {
+	public:
+		static void serialize(Node& node, T& x) {
+			x.serialize(node);
+		}
+		static void deserialize(Node& node, T& x) {
+			 _deserialize(node, x, 0);
+		}
+	};
+
+	template<typename T>
+	auto _deserialize(Node& node, T& x, int)
+		-> decltype(x.deserialize(node)) {
+		x.deserialize(node);
+	}
+	template<typename T>
+	auto _deserialize(Node& node, T& x, long)
+		-> decltype(x.serialize(node)){
+		x.serialize(node);
+	}
+
+
+
+
+	class Reader : public Node {
+		bool error {false};
+		Json::Value root;
+	public:
+		Reader(std::string const& _file)
+			: Node(root, false, 0) {
+			std::ifstream ifs(_file);
+			if (not ifs.good()) {
+				error = true;
+				return;
+			}
+			std::stringstream strStream;
+			strStream << ifs.rdbuf();
+			Json::Reader().parse(strStream.str(), root);
+			(*this)["version"] % version;
+		}
+		bool hasError() const { return error; }
+	};
+
+	class Writer : public Node {
+		std::string file;
+		Json::Value root;
+	public:
+		Writer(std::string const& _file, uint32_t _fileFormatVersion)
+			: Node(root, true, _fileFormatVersion)
+			, file(_file) {
+			(*this)["version"] % _fileFormatVersion;
+		}
+		~Writer() {
+			Json::StyledWriter jsonWriter;
+			std::string jsonString = jsonWriter.write(root);
+			std::ofstream oFile(file);
+			oFile << jsonString;
+			oFile.close();
+		}
+	};
+}
+#endif
