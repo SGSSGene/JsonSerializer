@@ -68,8 +68,8 @@ int main(int, char**) {
 	T t1 { a1, { "b1", a1, {a1, a1, a1}}, { 7 }};
 	T t2;
 
-	jsonSerializer::Write("file.json", t1);
-	jsonSerializer::Read("file.json", t2);
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
 
 	std::cout<<std::boolalpha<<"a1==a2:"<<(t1.a==t2.a)<<std::endl;
 	std::cout<<std::boolalpha<<"b1==b2:"<<(t1.b==t2.b)<<std::endl;
@@ -82,7 +82,7 @@ int main(int, char**) {
 				node["data"] % i;
 			}
 		} i;
-		jsonSerializer::Read("file2.json", i);
+		jsonSerializer::read("file2.json", i);
 		std::cout<<i.i<<std::endl;
 
 	} catch(jsonSerializer::Exception const& e) {

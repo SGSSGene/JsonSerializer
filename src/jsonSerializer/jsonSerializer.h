@@ -352,7 +352,7 @@ namespace jsonSerializer {
 
 
 	template<typename T>
-	void Read(std::string const& _file, T& _data) {
+	void read(std::string const& _file, T& _data) {
 		Json::Value root;
 		NodeValue node(root, false, 0, false);
 		std::ifstream ifs(_file);
@@ -374,7 +374,7 @@ namespace jsonSerializer {
 		}
 	}
 	template<typename T>
-	void Write(std::string const& _file, T& _data) {
+	void write(std::string const& _file, T& _data) {
 		Json::Value root;
 		NodeValue node(root, true, 0, false);
 		node % _data;
