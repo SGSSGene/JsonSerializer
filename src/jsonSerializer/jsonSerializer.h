@@ -28,14 +28,11 @@ namespace jsonSerializer {
 	protected:
 		Json::Value& value;
 		bool serialize;
-		uint32_t version;
 	public:
-		Node(Json::Value& _value, bool _serialize, uint32_t _fileFormatVersion)
+		Node(Json::Value& _value, bool _serialize)
 			: value(_value)
-			, serialize(_serialize)
-			, version (_fileFormatVersion) {
+			, serialize(_serialize) {
 		}
-		uint32_t getFileFormatVersion() const { return version; }
 		bool isSerializing() const {
 			return serialize;
 		}
@@ -48,8 +45,8 @@ namespace jsonSerializer {
 	private:
 		bool defaultValueNeeded;
 	public:
-		NodeValue(Json::Value& _value, bool _serialize, uint32_t _fileFormatVersion, bool _defaultValueNeeded)
-			: Node(_value, _serialize, _fileFormatVersion)
+		NodeValue(Json::Value& _value, bool _serialize, bool _defaultValueNeeded)
+			: Node(_value, _serialize)
 			, defaultValueNeeded(_defaultValueNeeded) {}
 		template<typename T>
 		NodeValueDefault<T> operator%(T& x);
@@ -66,8 +63,6 @@ namespace jsonSerializer {
 			: t(_t)
 			, needDefaultValue(_needDefaultValue) {}
 
-		~NodeValueDefault() {
-		}
 		void operator or(T const& _t) {
 			if (needDefaultValue) {
 				t = _t;
@@ -79,7 +74,7 @@ namespace jsonSerializer {
 
 	inline NodeValue Node::operator[](std::string const& _s) {
 		bool defaultValueNeeded = not value.isMember(_s);
-		return NodeValue(value[_s], serialize, version, defaultValueNeeded);
+		return NodeValue(value[_s], serialize, defaultValueNeeded);
 	}
 
 	template<typename T>
@@ -92,8 +87,6 @@ namespace jsonSerializer {
 		}
 		return NodeValueDefault<T>(x, defaultValueNeeded);
 	}
-
-
 
 
 	template<>
@@ -241,7 +234,7 @@ namespace jsonSerializer {
 			node.getValue() = Json::arrayValue;
 			for (auto& e : x) {
 				Json::Value value;
-				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(value, node.isSerializing(), false);
 				newNode % e;
 				node.getValue().append(value);
 			}
@@ -250,7 +243,7 @@ namespace jsonSerializer {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
-				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
 				newNode % x.back();
 			}
 		}
@@ -262,7 +255,7 @@ namespace jsonSerializer {
 			node.getValue() = Json::arrayValue;
 			for (auto e : x) {
 				Json::Value value;
-				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(value, node.isSerializing(), false);
 				newNode % e;
 				node.getValue().append(value);
 			}
@@ -271,7 +264,7 @@ namespace jsonSerializer {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
-				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
 				newNode % x.back();
 			}
 		}
@@ -283,7 +276,7 @@ namespace jsonSerializer {
 			node.getValue() = Json::arrayValue;
 			for (auto& e : x) {
 				Json::Value value;
-				NodeValue newNode(value, node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(value, node.isSerializing(), false);
 				newNode % e;
 				node.getValue().append(value);
 			}
@@ -291,7 +284,7 @@ namespace jsonSerializer {
 		static void deserialize(Node& node, std::array<T, N>& x) {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
-				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
 				newNode % x[i];
 			}
 		}
@@ -307,8 +300,8 @@ namespace jsonSerializer {
 				T1  key   = e.first;
 				T2& value = e.second;
 				Json::Value jsonValue;
-				NodeValue(jsonValue["key"], true, node.getFileFormatVersion(), false)   % key;
-				NodeValue(jsonValue["value"], true, node.getFileFormatVersion(), false) % value;
+				NodeValue(jsonValue["key"], true, false)   % key;
+				NodeValue(jsonValue["value"], true, false) % value;
 				node.getValue().append(jsonValue);
 			}
 		}
@@ -317,8 +310,8 @@ namespace jsonSerializer {
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				T1 key;
 				T2 value;
-				NodeValue(node.getValue()[i]["key"], false, node.getFileFormatVersion(), false)   % key;
-				NodeValue(node.getValue()[i]["value"], false, node.getFileFormatVersion(), false) % value;
+				NodeValue(node.getValue()[i]["key"], false, false)   % key;
+				NodeValue(node.getValue()[i]["value"], false, false) % value;
 				x[key] = std::move(value);
 			}
 		}
@@ -354,7 +347,7 @@ namespace jsonSerializer {
 	template<typename T>
 	void read(std::string const& _file, T& _data) {
 		Json::Value root;
-		NodeValue node(root, false, 0, false);
+		NodeValue node(root, false, false);
 		std::ifstream ifs(_file);
 		if (ifs.fail()) {
 			throw Exception("Opening file failed");
@@ -376,7 +369,7 @@ namespace jsonSerializer {
 	template<typename T>
 	void write(std::string const& _file, T& _data) {
 		Json::Value root;
-		NodeValue node(root, true, 0, false);
+		NodeValue node(root, true, false);
 		node % _data;
 		Json::StyledWriter jsonWriter;
 		std::string jsonString = jsonWriter.write(root);
