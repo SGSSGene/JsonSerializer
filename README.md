@@ -18,7 +18,7 @@ Default supported datatypes:
 * std::vector
 * std::list
 * std::map
-* extendable for otherdata types
+* extendable for other data types
 
 ## Example
 ### Function declaration
@@ -32,7 +32,7 @@ public:
 	serialize(jsonSerializer::Node& node) {
 		node["name"]   % name or "unknown"; //(de-)serialize name, if name is not set, set it to "unknown"
 		node["x"]      % x or 0;
-		node["values"] % values or {};
+		node["values"] % values or std::vector<double>{};
 	}
 };
 

@@ -11,7 +11,7 @@ public:
 	void serialize(jsonSerializer::Node& node) {
 		node["name"]   % name or "unknown"; //(de-)serialize name, if name is not set, set it to "unknown"
 		node["x"]      % x or 0;
-		node["values"] % values;
+		node["values"] % values or std::vector<double> {};
 	}
 	bool operator==(A const& a) const {
 		return name   == a.name &&
@@ -28,7 +28,7 @@ public:
 	void serialize(jsonSerializer::Node& node) {
 		node["name"]        % name or "unknown";
 		node["singleValue"] % singleValue;
-		node["listOfAs"]    % listOfAs;
+		node["listOfAs"]    % listOfAs or std::list<A>{};
 	}
 	bool operator==(B const& b) const {
 		return name        == b.name &&
