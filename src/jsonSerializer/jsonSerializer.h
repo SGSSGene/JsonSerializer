@@ -150,8 +150,8 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, int16_t& x) {
-			if (not node.getValue().isUInt()) throw WrongType(node.getValue(), "expected int16_t");
-			int32_t t = node.getValue().asUInt();
+			if (not node.getValue().isInt()) throw WrongType(node.getValue(), "expected int16_t");
+			int32_t t = node.getValue().asInt();
 			if (t > (1<<15)-1 || t < -32768 ) throw WrongType(node.getValue(), "expected int16_t");
 
 			x = t;
@@ -183,10 +183,10 @@ namespace jsonSerializer {
 	template<>
 	class Converter<float> {
 	public:
-		static void   serialize(Node& node, double& x) {
+		static void   serialize(Node& node, float& x) {
 			node.getValue() = x;
 		}
-		static void deserialize(Node& node, double& x) {
+		static void deserialize(Node& node, float& x) {
 			if (not node.getValue().isDouble()) throw WrongType(node.getValue(), "expected float");
 			x = node.getValue().asFloat();
 		}
@@ -241,6 +241,7 @@ namespace jsonSerializer {
 		}
 		static void deserialize(Node& node, std::vector<T>& x) {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
+			x.clear();
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
 				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
@@ -262,6 +263,7 @@ namespace jsonSerializer {
 		}
 		static void deserialize(Node& node, std::list<T>& x) {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
+			x.clear();
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
 				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
@@ -307,6 +309,7 @@ namespace jsonSerializer {
 		}
 		static void deserialize(Node& node, std::map<T1, T2>& x) {
 			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
+			x.clear();
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				T1 key;
 				T2 value;

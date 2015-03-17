@@ -8,5 +8,9 @@ all:
 	        -pthread \
 	        -Isrc \
 	        -o test \
+	        libs/gtest-1.7.0/src/gtest-all.cc \
+	        libs/gtest-1.7.0/src/gtest_main.cc \
+	        -isystem libs/gtest-1.7.0/ \
+	        -isystem libs/gtest-1.7.0/include \
 	        src/json/jsoncpp.cpp \
 	        src/test/main.cpp

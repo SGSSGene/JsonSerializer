@@ -1,6 +1,136 @@
 #include <jsonSerializer/jsonSerializer.h>
+#include <gtest/gtest.h>
 
 #include <iostream>
+
+TEST(ReadWrite, testBool1) {
+
+	bool t1 { false }, t2 { false };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_FALSE(t1);
+	EXPECT_EQ(t1, false);
+}
+TEST(ReadWrite, testBool2) {
+
+	bool t1 { true }, t2 { false };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_TRUE(t1);
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testBool3) {
+
+	bool t1 { false }, t2 { true };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_FALSE(t1);
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testBool4) {
+
+	bool t1 { true }, t2 { true };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_TRUE(t1);
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testUInt8) {
+	uint8_t t1 { 42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testInt8) {
+	int8_t t1 { -42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testUInt16) {
+	uint16_t t1 { 42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testInt16) {
+	int16_t t1 { -42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testUInt32) {
+	uint32_t t1 { 42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testInt32) {
+	int32_t t1 { -42 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+
+TEST(ReadWrite, testFloat) {
+	float t1 { 4.2 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testDouble) {
+	double t1 { 4.2 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testString) {
+	std::string t1 { "42" }, t2 { "" };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testVectorInt) {
+	std::vector<int> t1 { 0, 1, 2, 3 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testListInt) {
+	std::list<int> t1 { 0, 1, 2, 3 }, t2 { 0 };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testArrayInt) {
+	std::array<int, 4> t1 {{ 0, 1, 2, 3 }}, t2;
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+TEST(ReadWrite, testMapInt) {
+	std::map<int, int> t1 { {100, 0}, {200, 1}, {300, 2}, {400, 3} }, t2 { {100, 0}, {200, 0}, {500, 10} };
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
 
 class A {
 public:
@@ -46,7 +176,7 @@ public:
 	void deserialize(jsonSerializer::Node&) {
 		x = 0; // always set x to zero, never deserialize
 	}
-	bool operator==(C const& c) const {
+	bool operator!=(C const& c) const {
 		return x == c.x;
 	}
 };
@@ -62,8 +192,7 @@ struct T {
 	}
 };
 
-
-int main(int, char**) {
+TEST(ReadWrite, Complex) {
 	A a1 = { "a1", 17, {0., 10.}};
 	T t1 { a1, { "b1", a1, {a1, a1, a1}}, { 7 }};
 	T t2;
@@ -71,21 +200,7 @@ int main(int, char**) {
 	jsonSerializer::write("file.json", t1);
 	jsonSerializer::read("file.json", t2);
 
-	std::cout<<std::boolalpha<<"a1==a2:"<<(t1.a==t2.a)<<std::endl;
-	std::cout<<std::boolalpha<<"b1==b2:"<<(t1.b==t2.b)<<std::endl;
-	std::cout<<std::boolalpha<<"c1==c2:"<<(t1.c==t2.c)<<std::endl;
-	try
-	{
-		struct {
-			int i { 10 };
-			void serialize(jsonSerializer::Node& node) {
-				node["data"] % i;
-			}
-		} i;
-		jsonSerializer::read("file2.json", i);
-		std::cout<<i.i<<std::endl;
-
-	} catch(jsonSerializer::Exception const& e) {
-		std::cout << e.what() << std::endl;
-	}
+	EXPECT_EQ(t1.a, t2.a);
+	EXPECT_EQ(t1.b, t2.b);
+	EXPECT_NE(t1.c, t1.c);
 }

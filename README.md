@@ -4,6 +4,7 @@ One function for serialization and deserialization. Different function for seria
 
 ## Dependencies
 	Uses https://github.com/open-source-parsers/jsoncpp . Source is directly integrated
+	Uses https://code.google.com/p/googletest/ . Source is directly integrated
 	
 
 ## Support
