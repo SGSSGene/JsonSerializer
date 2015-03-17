@@ -35,5 +35,13 @@ public:
 		node["values"] % values or {};
 	}
 };
+
+int main() {
+	A a1, a2;
+	jsonSerializer::write("file.json", a1);
+	jsonSerializer::read("file.json", a2);
+	// a1 and a2 are now the same
+	return 0;
+}
 ```
 
