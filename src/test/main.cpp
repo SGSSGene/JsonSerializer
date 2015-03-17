@@ -43,7 +43,7 @@ public:
 	void serialize(jsonSerializer::Node& node) {
 		node["x"] % x;
 	}
-	void deserialize(jsonSerializer::Node& node) {
+	void deserialize(jsonSerializer::Node&) {
 		x = 0; // always set x to zero, never deserialize
 	}
 	bool operator==(C const& c) const {
@@ -51,30 +51,41 @@ public:
 	}
 };
 
+struct T {
+	A a;
+	B b;
+	C c;
+	void serialize(jsonSerializer::Node& node) {
+		node["a"] % a;
+		node["b"] % b;
+		node["c"] % c;
+	}
+};
+
 
 int main(int, char**) {
-	A a1 { "a1", 17, {0., 10.}};
-	B b1 { "b1", a1, {a1, a1, a1}};
-	C c1 { 7 };
-	A a2;
-	B b2;
-	C c2;
+	A a1 = { "a1", 17, {0., 10.}};
+	T t1 { a1, { "b1", a1, {a1, a1, a1}}, { 7 }};
+	T t2;
 
+	jsonSerializer::Write("file.json", t1);
+	jsonSerializer::Read("file.json", t2);
+
+	std::cout<<std::boolalpha<<"a1==a2:"<<(t1.a==t2.a)<<std::endl;
+	std::cout<<std::boolalpha<<"b1==b2:"<<(t1.b==t2.b)<<std::endl;
+	std::cout<<std::boolalpha<<"c1==c2:"<<(t1.c==t2.c)<<std::endl;
+	try
 	{
-		jsonSerializer::Writer writer("file.json", 0);
-		writer["a"] % a1;
-		writer["b"] % b1;
-		writer["c"] % c1;
+		struct {
+			int i { 10 };
+			void serialize(jsonSerializer::Node& node) {
+				node["data"] % i;
+			}
+		} i;
+		jsonSerializer::Read("file2.json", i);
+		std::cout<<i.i<<std::endl;
 
+	} catch(jsonSerializer::Exception const& e) {
+		std::cout << e.what() << std::endl;
 	}
-
-	{
-		jsonSerializer::Reader reader("file.json");
-		reader["a"] % a2;
-		reader["b"] % b2;
-		reader["c"] % c2;
-	}
-	std::cout<<std::boolalpha<<"a1==a2:"<<(a1==a2)<<std::endl;
-	std::cout<<std::boolalpha<<"b1==b2:"<<(b1==b2)<<std::endl;
-	std::cout<<std::boolalpha<<"c1==c2:"<<(c1==c2)<<std::endl;
 }

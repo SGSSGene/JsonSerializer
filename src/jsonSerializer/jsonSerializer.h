@@ -2,17 +2,20 @@
 #define Converter_Converter_H
 
 #include <array>
+#include <exception>
 #include <fstream>
 #include <list>
 #include <map>
 #include <string>
 #include <vector>
 
-#include <json/json.h>
-//#include <genericFactory/genericFactory.h>
+#include "exception.h"
+#include <iostream>
 
+Json::Reader* readerPtr { nullptr };
 
 namespace jsonSerializer {
+
 	template<typename ...T>
 	class Converter;
 
@@ -63,6 +66,8 @@ namespace jsonSerializer {
 			: t(_t)
 			, needDefaultValue(_needDefaultValue) {}
 
+		~NodeValueDefault() {
+		}
 		void operator or(T const& _t) {
 			if (needDefaultValue) {
 				t = _t;
@@ -81,12 +86,11 @@ namespace jsonSerializer {
 	inline NodeValueDefault<T> NodeValue::operator%(T& x) {
 		if (serialize) {
 			Converter<T>::serialize(*this, x);
+			defaultValueNeeded = false;
 		} else if (not defaultValueNeeded) {
 			Converter<T>::deserialize(*this, x);
-		} else {
-			return NodeValueDefault<T>(x, defaultValueNeeded);
 		}
-		return NodeValueDefault<T>(x, false);
+		return NodeValueDefault<T>(x, defaultValueNeeded);
 	}
 
 
@@ -99,6 +103,7 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, bool& x) {
+			if (not node.getValue().isBool()) throw WrongType(node.getValue(), "expected bool");
 			x = node.getValue().asBool();
 		}
 	};
@@ -110,7 +115,11 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, uint8_t& x) {
-			x = node.getValue().asUInt();
+			if (not node.getValue().isUInt()) throw WrongType(node.getValue(), "expected uint8_t");
+			uint32_t t = node.getValue().asUInt();
+			if (t > (1<<8)-1) throw WrongType(node.getValue(), "expected uint8_t");
+
+			x = t;
 		}
 	};
 	template<>
@@ -120,7 +129,11 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, int8_t& x) {
-			x = node.getValue().asInt();
+			if (not node.getValue().isInt()) throw WrongType(node.getValue(), "expected int8_t");
+			int32_t t = node.getValue().asInt();
+			if (t > (1<<7)-1 || t < -128) throw WrongType(node.getValue(), "expected int8_t");
+
+			x = t;
 		}
 	};
 	template<>
@@ -130,7 +143,11 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, uint16_t& x) {
-			x = node.getValue().asUInt();
+			if (not node.getValue().isUInt()) throw WrongType(node.getValue(), "expected uint16_t");
+			uint32_t t = node.getValue().asUInt();
+			if (t > (1<<16)-1) throw WrongType(node.getValue(), "expected uint16_t");
+
+			x = t;
 		}
 	};
 	template<>
@@ -140,7 +157,11 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, int16_t& x) {
-			x = node.getValue().asInt();
+			if (not node.getValue().isUInt()) throw WrongType(node.getValue(), "expected int16_t");
+			int32_t t = node.getValue().asUInt();
+			if (t > (1<<15)-1 || t < -32768 ) throw WrongType(node.getValue(), "expected int16_t");
+
+			x = t;
 		}
 	};
 	template<>
@@ -150,6 +171,7 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, uint32_t& x) {
+			if (not node.getValue().isUInt()) throw WrongType(node.getValue(), "expected uint32_t");
 			x = node.getValue().asUInt();
 		}
 	};
@@ -161,6 +183,7 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, int32_t& x) {
+			if (not node.getValue().isInt()) throw WrongType(node.getValue(), "expected int32_t");
 			x = node.getValue().asInt();
 		}
 	};
@@ -171,7 +194,8 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, double& x) {
-			x = node.getValue().asDouble();
+			if (not node.getValue().isDouble()) throw WrongType(node.getValue(), "expected float");
+			x = node.getValue().asFloat();
 		}
 	};
 
@@ -182,6 +206,7 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, double& x) {
+			if (not node.getValue().isDouble()) throw WrongType(node.getValue(), "expected double");
 			x = node.getValue().asDouble();
 		}
 	};
@@ -204,6 +229,7 @@ namespace jsonSerializer {
 			node.getValue() = x;
 		}
 		static void deserialize(Node& node, std::string& x) {
+			if (not node.getValue().isString()) throw WrongType(node.getValue(), "expected string");
 			x = node.getValue().asString();
 		}
 	};
@@ -221,6 +247,7 @@ namespace jsonSerializer {
 			}
 		}
 		static void deserialize(Node& node, std::vector<T>& x) {
+			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
 				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
@@ -241,6 +268,7 @@ namespace jsonSerializer {
 			}
 		}
 		static void deserialize(Node& node, std::list<T>& x) {
+			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				x.push_back(T());
 				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
@@ -261,6 +289,7 @@ namespace jsonSerializer {
 			}
 		}
 		static void deserialize(Node& node, std::array<T, N>& x) {
+			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				NodeValue newNode(node.getValue()[i], node.isSerializing(), node.getFileFormatVersion(), false);
 				newNode % x[i];
@@ -284,6 +313,7 @@ namespace jsonSerializer {
 			}
 		}
 		static void deserialize(Node& node, std::map<T1, T2>& x) {
+			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
 			for (uint i(0); i<node.getValue().size(); ++i) {
 				T1 key;
 				T2 value;
@@ -321,42 +351,44 @@ namespace jsonSerializer {
 
 
 
-
-	class Reader : public Node {
-		bool error {false};
+	template<typename T>
+	void Read(std::string const& _file, T& _data) {
 		Json::Value root;
-	public:
-		Reader(std::string const& _file)
-			: Node(root, false, 0) {
-			std::ifstream ifs(_file);
-			if (not ifs.good()) {
-				error = true;
-				return;
-			}
-			std::stringstream strStream;
-			strStream << ifs.rdbuf();
-			Json::Reader().parse(strStream.str(), root);
-			(*this)["version"] % version;
+		NodeValue node(root, false, 0, false);
+		std::ifstream ifs(_file);
+		if (ifs.fail()) {
+			throw Exception("Opening file failed");
 		}
-		bool hasError() const { return error; }
-	};
-
-	class Writer : public Node {
-		std::string file;
+		std::stringstream strStream;
+		strStream << ifs.rdbuf();
+		Json::Reader reader;
+		readerPtr = &reader;
+		if (not reader.parse(strStream.str(), root)) {
+			throw Exception("Parsing file failed: "+reader.getFormattedErrorMessages());
+		}
+		try {
+			node % _data;
+		} catch(WrongType const& type) {
+			reader.pushError(type.getValue(), type.what(), type.getValue());
+			throw Exception("Parsing failed: "+ reader.getFormattedErrorMessages());
+		}
+	}
+	template<typename T>
+	void Write(std::string const& _file, T& _data) {
 		Json::Value root;
-	public:
-		Writer(std::string const& _file, uint32_t _fileFormatVersion)
-			: Node(root, true, _fileFormatVersion)
-			, file(_file) {
-			(*this)["version"] % _fileFormatVersion;
+		NodeValue node(root, true, 0, false);
+		node % _data;
+		Json::StyledWriter jsonWriter;
+		std::string jsonString = jsonWriter.write(root);
+		std::ofstream oFile(_file);
+		if (oFile.fail()) {
+			throw Exception("Opening file failed");
 		}
-		~Writer() {
-			Json::StyledWriter jsonWriter;
-			std::string jsonString = jsonWriter.write(root);
-			std::ofstream oFile(file);
-			oFile << jsonString;
-			oFile.close();
+		oFile << jsonString;
+		oFile.close();
+		if (oFile.fail()) {
+			throw Exception("Writing to file failed");
 		}
-	};
+	}
 }
 #endif

@@ -1,6 +1,6 @@
 all:
 	clang++ -std=c++11 \
-			-O0 \
+	        -O0 \
 	        -ggdb \
 	        -Wall \
 	        -Wextra \
