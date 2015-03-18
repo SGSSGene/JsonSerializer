@@ -24,13 +24,14 @@ Default supported datatypes:
 ## Example
 ### Function declaration
 ```c
+#include <jsonSerializer/jsonSerializer.h>
 class A {
 private:
 	std::string name;
 	uint32_t x;
 	std::vector<double> values;
 public:
-	serialize(jsonSerializer::Node& node) {
+	void serialize(jsonSerializer::Node& node) {
 		node["name"]   % name or "unknown"; //(de-)serialize name, if name is not set, set it to "unknown"
 		node["x"]      % x or 0;
 		node["values"] % values or std::vector<double>{};
