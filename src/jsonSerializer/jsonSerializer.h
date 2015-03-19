@@ -12,8 +12,6 @@
 #include "exception.h"
 #include <iostream>
 
-Json::Reader* readerPtr { nullptr };
-
 namespace jsonSerializer {
 
 	template<typename ...T>
@@ -358,7 +356,6 @@ namespace jsonSerializer {
 		std::stringstream strStream;
 		strStream << ifs.rdbuf();
 		Json::Reader reader;
-		readerPtr = &reader;
 		if (not reader.parse(strStream.str(), root)) {
 			throw Exception("Parsing file failed: "+reader.getFormattedErrorMessages());
 		}
