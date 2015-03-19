@@ -33,8 +33,8 @@ private:
 public:
 	void serialize(jsonSerializer::Node& node) {
 		node["name"]   % name or "unknown"; //(de-)serialize name, if name is not set, set it to "unknown"
-		node["x"]      % x or 0;
-		node["values"] % values or std::vector<double>{};
+		node["x"]      % x;
+		node["values"] % values;
 	}
 };
 
@@ -43,6 +43,9 @@ int main() {
 	jsonSerializer::write("file.json", a1);
 	jsonSerializer::read("file.json", a2);
 	// a1 and a2 are now the same
+
+	std::vector<double> vec{1, 2, 3, 4};
+	jsonSerializer::write("file2.json", vec);
 	return 0;
 }
 ```
