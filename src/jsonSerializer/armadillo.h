@@ -8,32 +8,6 @@
 
 namespace jsonSerializer {
 	template<>
-	class Converter<arma::mat44> {
-	public:
-		static void   serialize(Node& node, arma::mat44& x) {
-			for (uint i(0); i < x.n_rows; ++i) {
-				std::stringstream matrixSS, nameSS;
-				matrixSS.precision(10);
-				matrixSS << std::fixed << std::setw(17);
-				x.row(i).raw_print(matrixSS);
-				nameSS << "matrix" << int(i);
-				std::string s = matrixSS.str();
-				node.getValue()[nameSS.str()] = s;
-			}
-		}
-		static void deserialize(Node& node, arma::mat44& x) {
-			x = arma::eye(4, 4);
-			for (uint i(0); i < x.n_rows; ++i) {
-				std::string s;
-				std::stringstream matrixSS, nameSS;
-				nameSS << "matrix" << int(i);
-				s = node.getValue()[nameSS.str()].asString();
-				x.row(i) = arma::rowvec(s);
-			}
-
-		}
-	};
-	template<>
 	class Converter<arma::mat> {
 	public:
 		static void   serialize(Node& node, arma::mat& x) {
@@ -51,7 +25,7 @@ namespace jsonSerializer {
 			uint16_t cols;
 			rows = node.getValue()["rows"].asUInt();
 			cols = node.getValue()["cols"].asUInt();
-			x = arma::zeros(rows ,cols);
+			x = arma::zeros(rows, cols);
 
 			for (uint row(0); row < x.n_rows; ++row) {
 				for (uint col(0); col < x.n_cols; ++col) {
@@ -61,6 +35,29 @@ namespace jsonSerializer {
 			}
 		}
 	};
+	template<>
+	class Converter<arma::mat44> {
+	public:
+		static void   serialize(Node& node, arma::mat44& x) {
+			Converter<arma::mat>::serialize(node, x);
+		}
+		static void deserialize(Node& node, arma::mat44& x) {
+			if (node.getValue().isMember("matrix0")) {
+				x = arma::eye(4, 4);
+				for (uint i(0); i < x.n_rows; ++i) {
+					std::string s;
+					std::stringstream matrixSS, nameSS;
+					nameSS << "matrix" << int(i);
+					s = node.getValue()[nameSS.str()].asString();
+					x.row(i) = arma::rowvec(s);
+				}
+			} else {
+				Converter<arma::mat>::deserialize(node, x);
+			}
+
+		}
+	};
+
 
 }
 
