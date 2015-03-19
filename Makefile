@@ -12,5 +12,7 @@ all:
 	        libs/gtest-1.7.0/src/gtest_main.cc \
 	        -isystem libs/gtest-1.7.0/ \
 	        -isystem libs/gtest-1.7.0/include \
+	        -isystem libs/armadillo/include \
 	        src/json/jsoncpp.cpp \
-	        src/test/main.cpp
+	        src/test/main.cpp \
+	        src/test/armadilloTest.cpp
