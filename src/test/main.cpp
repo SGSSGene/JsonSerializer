@@ -131,6 +131,14 @@ TEST(ReadWrite, testMapInt) {
 
 	EXPECT_EQ(t1, t2);
 }
+TEST(ReadWrite, testSetInt) {
+	std::set<int> t1 {{ 0, 1, 2, 3 }}, t2 {{ 0, 1, 2, 3 }};
+	jsonSerializer::write("file.json", t1);
+	jsonSerializer::read("file.json", t2);
+
+	EXPECT_EQ(t1, t2);
+}
+
 
 class A {
 public:

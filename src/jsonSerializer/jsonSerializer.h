@@ -6,6 +6,7 @@
 #include <fstream>
 #include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -269,6 +270,30 @@ namespace jsonSerializer {
 			}
 		}
 	};
+	template<typename T>
+	class Converter<std::set<T>> {
+	public:
+		static void   serialize(Node& node, std::set<T>& x) {
+			node.getValue() = Json::arrayValue;
+			for (auto e : x) {
+				Json::Value value;
+				NodeValue newNode(value, node.isSerializing(), false);
+				newNode % e;
+				node.getValue().append(value);
+			}
+		}
+		static void deserialize(Node& node, std::set<T>& x) {
+			if (not node.getValue().isArray()) throw WrongType(node.getValue(), "expected array");
+			x.clear();
+			for (uint i(0); i<node.getValue().size(); ++i) {
+				T t;
+				NodeValue newNode(node.getValue()[i], node.isSerializing(), false);
+				newNode % t;
+				x.insert(std::move(t));
+			}
+		}
+	};
+
 	template<typename T, std::size_t N>
 	class Converter<std::array<T, N>> {
 	public:
