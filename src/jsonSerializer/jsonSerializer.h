@@ -318,6 +318,20 @@ namespace jsonSerializer {
 		}
 	};
 
+	template <typename T>
+	class has_serialize_function
+	{
+		typedef char True;
+		typedef long False;
+
+		template <typename C> static True  test( decltype(&C::serialize));
+		template <typename C> static False test(...);
+
+	public:
+		enum { value = sizeof(test<T>(0)) == sizeof(True) };
+	};
+
+
 	template<typename ...T>
 	class ConverterSplit;
 
@@ -325,22 +339,30 @@ namespace jsonSerializer {
 	class Converter<T> {
 	public:
 		static void serialize(Node& node, T& x) {
+			static_assert(has_serialize_function<T>::value, "Data type has no serialization function");
 			x.serialize(node);
 		}
 		static void deserialize(Node& node, T& x) {
-			 _deserialize(node, x, 0);
+			 _deserialize(node, x, 0, 0);
 		}
 	};
 
 	template<typename T>
-	auto _deserialize(Node& node, T& x, int)
+	auto _deserialize(Node& node, T& x, int, int)
 		-> decltype(x.deserialize(node)) {
 		x.deserialize(node);
 	}
 	template<typename T>
-	auto _deserialize(Node& node, T& x, long)
+	auto _deserialize(Node& node, T& x, int, long)
 		-> decltype(x.serialize(node)){
 		x.serialize(node);
+	}
+
+
+	template<typename T>
+	auto _deserialize(Node&, T&, long, long)
+		-> void {
+		static_assert(has_serialize_function<T>::value, "Data type has no serialization function");
 	}
 
 
