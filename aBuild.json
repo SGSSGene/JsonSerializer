@@ -1,0 +1,8 @@
+{
+	"projectName": "JsonSerializer",
+	"paths" : {
+		"include" : ["src"],
+		"source"  : ["src/jsonSerializer", "src/json"]
+	}
+}
+
