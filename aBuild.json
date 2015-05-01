@@ -1,9 +1,14 @@
 {
-	"projectName": "JsonSerializer",
+	"projectName": "JsonSerializer.git",
 	"paths" : {
 		"include" : ["src"],
-		"source"  : ["src/jsonSerializer", "src/json"]
+		"source"  : ["src/jsonSerializer"]
 	},
+	"sources": [{
+		"url": "git@github.com:open-source-parsers/jsoncpp.git",
+		"commit": "master"
+	}
+	],
 	"type": "library"
 }
 

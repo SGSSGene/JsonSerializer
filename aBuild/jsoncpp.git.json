@@ -1,0 +1,10 @@
+{
+	"projectName": "jsoncpp.git",
+	"paths" : {
+		"include" : ["dist"],
+		"source"  : ["dist"]
+	},
+	"type": "library",
+	"setup": ["python amalgamate.py"]
+}
+
