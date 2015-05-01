@@ -3,6 +3,7 @@
 	"paths" : {
 		"include" : ["src"],
 		"source"  : ["src/jsonSerializer", "src/json"]
-	}
+	},
+	"type": "library"
 }
 
